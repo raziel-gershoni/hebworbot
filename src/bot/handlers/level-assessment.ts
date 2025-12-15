@@ -176,8 +176,6 @@ async function showAssessmentQuestion(ctx: BotContext, userId: number, questionI
 **Вопрос ${questionIndex + 1} из ${state.questions.length}**
 
 ${question.russian}
-
-**${question.hebrew}**
 `;
 
   // Add numbered options only if using numbered buttons
