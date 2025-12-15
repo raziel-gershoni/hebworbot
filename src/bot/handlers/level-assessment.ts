@@ -148,12 +148,21 @@ async function showAssessmentQuestion(ctx: BotContext, userId: number, questionI
     WHERE user_id = ${userId} AND conversation_key = 'assessment'
   `;
 
-  // Create keyboard with shuffled answer options
+  // Create keyboard with numbered buttons (1, 2, 3, 4)
   const keyboard = new InlineKeyboard();
 
   shuffled.forEach((option: string, index: number) => {
-    keyboard.text(option, `answer_${questionIndex}_${index}`).row();
+    keyboard.text(`${index + 1}`, `answer_${questionIndex}_${index}`);
+    // Add two buttons per row for compact layout
+    if (index % 2 === 1) {
+      keyboard.row();
+    }
   });
+
+  // Display full options in message text
+  const optionsText = shuffled
+    .map((option, idx) => `${idx + 1}. ${option}`)
+    .join('\n');
 
   const questionText = `
 **Вопрос ${questionIndex + 1} из ${state.questions.length}**
@@ -161,6 +170,8 @@ async function showAssessmentQuestion(ctx: BotContext, userId: number, questionI
 ${question.russian}
 
 **${question.hebrew}**
+
+${optionsText}
 `;
 
   if (ctx.callbackQuery) {

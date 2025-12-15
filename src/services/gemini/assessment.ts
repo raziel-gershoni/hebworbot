@@ -37,6 +37,7 @@ You are an expert Hebrew language teacher for Russian speakers. Generate 9 multi
 **Question Format:**
 - Ask "Что означает на русском языке следующее слово/фраза на иврите: [Hebrew]?" (What does this Hebrew word/phrase mean in Russian?)
 - Provide 4 plausible options in Russian
+- **IMPORTANT**: Keep options SHORT (max 40 characters each) - use concise translations
 - Ensure distractors (wrong answers) are realistic but clearly incorrect
 - Mark the correct answer index (0-3)
 
