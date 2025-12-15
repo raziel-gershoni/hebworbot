@@ -27,6 +27,9 @@ bot.use(assessmentHandler);
 // Log when webhook is ready
 logger.info('Webhook handler initialized');
 
+// Initialize bot once (cached across invocations)
+let botInitialized = false;
+
 // Vercel serverless function handler
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
@@ -43,6 +46,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!req.body) {
       logger.error('No body in request');
       return res.status(400).json({ error: 'No body' });
+    }
+
+    // Initialize bot on first request (cached for subsequent requests)
+    if (!botInitialized) {
+      logger.info('Initializing bot...');
+      await bot.init();
+      botInitialized = true;
+      logger.info('Bot initialized successfully');
     }
 
     // Handle the update with grammY
