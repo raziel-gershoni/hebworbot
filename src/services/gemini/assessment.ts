@@ -37,6 +37,10 @@ You are an expert Hebrew language teacher for Russian speakers. Generate 9 multi
 **Question Format:**
 - Ask "Что означает на русском языке следующее слово/фраза на иврите: [Hebrew]?" (What does this Hebrew word/phrase mean in Russian?)
 - Provide 4 plausible options in Russian (can be detailed for clarity)
+- **CRITICAL**: This is a KNOWLEDGE TEST - provide NO hints, explanations, or tips
+- Do NOT add ANY explanatory text in parentheses like "(дословно: ...)" or "(буквально: ...)"
+- No literal translations, no contextual hints, no grammatical explanations
+- Test pure knowledge - user must know the answer, not guess from hints
 - Ensure distractors (wrong answers) are realistic but clearly incorrect
 - Mark the correct answer index (0-3)
 
@@ -53,6 +57,17 @@ Hebrew: אני אוהב לקרוא ספרים
 Russian question: "Что означает на русском языке следующая фраза на иврите: אני אוהב לקרוא ספרים?"
 Options: ["Я люблю читать книги", "Я люблю писать письма", "Я люблю смотреть фильмы", "Я люблю слушать музыку"]
 Correct: 0
+
+B2 Idiom Question (CORRECT - no hints):
+Hebrew: על קצה המזלג
+Russian question: "Что означает на русском языке следующая фраза на иврите: על קצה המזלג?"
+Options: ["Вкратце, в двух словах", "С большим трудом", "На скорую руку", "В последний момент"]
+Correct: 0
+
+WRONG examples (DO NOT do this - contains hints):
+❌ "Вкратце (дословно: на кончике вилки)"  ← No literal translations!
+❌ "Мир (приветствие)"  ← No contextual hints!
+❌ "Читать (глагол)"  ← No grammatical explanations!
 
 Generate 9 such questions now (2×A1, 1×A2, 2×B1, 2×B2, 1×C1, 1×C2).
 
