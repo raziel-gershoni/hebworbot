@@ -46,6 +46,40 @@ export function getModel(modelName?: string, isPremium: boolean = false): Genera
 }
 
 /**
+ * Clean JSON schema for Gemini API
+ * Removes $schema, $ref, definitions that Gemini doesn't support
+ */
+function cleanSchemaForGemini(schema: any): any {
+  if (typeof schema !== 'object' || schema === null) {
+    return schema;
+  }
+
+  // Remove Gemini-incompatible properties
+  const { $schema, $ref, definitions, ...cleaned } = schema;
+
+  // If there are definitions, we need to inline them
+  if (definitions && $ref) {
+    // This is a reference - inline the definition
+    const refName = $ref.split('/').pop();
+    if (refName && definitions[refName]) {
+      return cleanSchemaForGemini(definitions[refName]);
+    }
+  }
+
+  // Recursively clean nested schemas
+  const result: any = {};
+  for (const [key, value] of Object.entries(cleaned)) {
+    if (typeof value === 'object' && value !== null) {
+      result[key] = cleanSchemaForGemini(value);
+    } else {
+      result[key] = value;
+    }
+  }
+
+  return result;
+}
+
+/**
  * Generate content with structured JSON output
  */
 export async function generateStructured<T>(
@@ -55,7 +89,10 @@ export async function generateStructured<T>(
   isPremium: boolean = false
 ): Promise<T> {
   const model = getModel(modelName, isPremium);
-  const jsonSchema = zodToJsonSchema(schema, 'schema');
+  const rawSchema = zodToJsonSchema(schema, 'schema');
+
+  // Clean schema for Gemini API compatibility
+  const cleanedSchema = cleanSchemaForGemini(rawSchema);
 
   const startTime = Date.now();
 
@@ -66,7 +103,7 @@ export async function generateStructured<T>(
       contents: [{ role: 'user', parts: [{ text: prompt }] }],
       generationConfig: {
         responseMimeType: 'application/json',
-        responseSchema: jsonSchema as any,
+        responseSchema: cleanedSchema as any,
       },
     });
 
