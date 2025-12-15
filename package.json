@@ -7,9 +7,9 @@
   "scripts": {
     "dev": "vercel dev",
     "build": "tsc",
-    "vercel-build": "npm run build && npm run migrate",
     "start": "node dist/index.js",
     "migrate": "tsx scripts/migrate.ts",
+    "migrate:prod": "tsx scripts/migrate.ts",
     "prepare-vocabulary": "tsx scripts/prepare-vocabulary.ts",
     "seed-database": "tsx scripts/seed-database.ts",
     "test-gemini-models": "tsx scripts/test-gemini-models.ts",

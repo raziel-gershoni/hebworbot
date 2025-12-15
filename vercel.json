@@ -1,12 +1,8 @@
 {
-  "buildCommand": "npm run vercel-build",
   "functions": {
-    "api/webhook.ts": {
+    "api/**/*.ts": {
       "memory": 1024,
       "maxDuration": 10
     }
-  },
-  "env": {
-    "NODE_ENV": "production"
   }
 }
