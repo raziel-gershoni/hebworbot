@@ -46,41 +46,8 @@ export function getModel(modelName?: string, isPremium: boolean = false): Genera
 }
 
 /**
- * Clean JSON schema for Gemini API
- * Removes $schema, $ref, definitions that Gemini doesn't support
- */
-function cleanSchemaForGemini(schema: any): any {
-  if (typeof schema !== 'object' || schema === null) {
-    return schema;
-  }
-
-  // Remove Gemini-incompatible properties
-  const { $schema, $ref, definitions, ...cleaned } = schema;
-
-  // If there are definitions, we need to inline them
-  if (definitions && $ref) {
-    // This is a reference - inline the definition
-    const refName = $ref.split('/').pop();
-    if (refName && definitions[refName]) {
-      return cleanSchemaForGemini(definitions[refName]);
-    }
-  }
-
-  // Recursively clean nested schemas
-  const result: any = {};
-  for (const [key, value] of Object.entries(cleaned)) {
-    if (typeof value === 'object' && value !== null) {
-      result[key] = cleanSchemaForGemini(value);
-    } else {
-      result[key] = value;
-    }
-  }
-
-  return result;
-}
-
-/**
  * Generate content with structured JSON output
+ * Uses plain JSON mode without schema validation (Gemini's schema format is too restrictive)
  */
 export async function generateStructured<T>(
   prompt: string,
@@ -89,21 +56,19 @@ export async function generateStructured<T>(
   isPremium: boolean = false
 ): Promise<T> {
   const model = getModel(modelName, isPremium);
-  const rawSchema = zodToJsonSchema(schema, 'schema');
-
-  // Clean schema for Gemini API compatibility
-  const cleanedSchema = cleanSchemaForGemini(rawSchema);
 
   const startTime = Date.now();
 
   try {
     logger.debug(`Gemini request: ${prompt.substring(0, 100)}...`);
 
+    // Use JSON mode without schema enforcement
+    // Gemini will generate JSON, we validate with Zod after
     const result = await model.generateContent({
       contents: [{ role: 'user', parts: [{ text: prompt }] }],
       generationConfig: {
         responseMimeType: 'application/json',
-        responseSchema: cleanedSchema as any,
+        // Don't use responseSchema - it's too restrictive
       },
     });
 
@@ -111,11 +76,15 @@ export async function generateStructured<T>(
     logger.debug(`Gemini response time: ${responseTime}ms`);
 
     const text = result.response.text();
+
+    logger.debug('Raw Gemini response:', text.substring(0, 500));
+
     const parsed = JSON.parse(text);
 
-    // Validate with Zod
+    // Validate with Zod (this catches any schema issues)
     const validated = schema.parse(parsed);
 
+    logger.info('Gemini structured output validated successfully');
     return validated;
   } catch (error: any) {
     logger.error('Gemini API error:', {
