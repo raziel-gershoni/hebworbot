@@ -364,6 +364,402 @@ exercisesHandler.callbackQuery(/^heру_answer_(\d+)_(\d+)$/, async (ctx) => {
 });
 
 /**
+ * Start Russian → Hebrew exercise
+ */
+exercisesHandler.callbackQuery('exercise_ru_he', async (ctx) => {
+  await ctx.answerCallbackQuery();
+
+  if (!ctx.from) return;
+  const userId = ctx.from.id;
+
+  try {
+    const user = await getUserById(userId);
+    if (!user || !user.current_level) {
+      await ctx.editMessageText('Сначала пройдите тест. Используйте /start');
+      return;
+    }
+
+    const words = await getWordsForExercise(userId, user.current_level);
+
+    if (words.length === 0) {
+      await ctx.editMessageText(
+        'У вас нет слов для упражнений. Сначала изучите новые слова!',
+        {
+          reply_markup: new InlineKeyboard()
+            .text('📚 Новые слова', 'daily_words')
+            .text('📚 Меню', 'main_menu'),
+        }
+      );
+      return;
+    }
+
+    // Store exercise state
+    await sql`
+      INSERT INTO conversation_state (user_id, conversation_key, state_data)
+      VALUES (
+        ${userId},
+        'exercise_ru_he',
+        ${JSON.stringify({
+          words: words.map(w => ({ id: w.id, hebrew_word: w.hebrew_word, russian_translation: w.russian_translation, cefr_level: w.cefr_level })),
+          currentIndex: 0,
+          correctCount: 0,
+          startTime: Date.now(),
+        })}
+      )
+      ON CONFLICT (user_id)
+      DO UPDATE SET
+        conversation_key = 'exercise_ru_he',
+        state_data = ${JSON.stringify({
+          words: words.map(w => ({ id: w.id, hebrew_word: w.hebrew_word, russian_translation: w.russian_translation, cefr_level: w.cefr_level })),
+          currentIndex: 0,
+          correctCount: 0,
+          startTime: Date.now(),
+        })},
+        updated_at = NOW()
+    `;
+
+    await showRussianToHebrewQuestion(ctx, userId, 0);
+
+  } catch (error: any) {
+    logger.error('Error starting ru_he exercise:', error);
+    await ctx.editMessageText('Ошибка. Попробуйте позже.');
+  }
+});
+
+/**
+ * Show Russian → Hebrew question
+ */
+async function showRussianToHebrewQuestion(ctx: BotContext, userId: number, questionIndex: number) {
+  const stateResult = await sql`
+    SELECT state_data FROM conversation_state
+    WHERE user_id = ${userId} AND conversation_key = 'exercise_ru_he'
+  `;
+
+  if (stateResult.length === 0) {
+    await ctx.editMessageText('Ошибка: состояние не найдено. Начните заново.');
+    return;
+  }
+
+  const state = stateResult[0].state_data as any;
+  const word = state.words[questionIndex];
+
+  if (!word) {
+    // Exercise complete
+    await showExerciseResults(ctx, userId, state, 'exercise_ru_he');
+    return;
+  }
+
+  // Get distractors
+  const distractors = await getDistractors(word, 'hebrew');
+  const options = shuffle([word.hebrew_word, ...distractors]);
+  const correctIndex = options.indexOf(word.hebrew_word);
+
+  // Store question state
+  state.currentQuestion = {
+    correctIndex,
+    options,
+    questionTime: Date.now(),
+  };
+
+  await sql`
+    UPDATE conversation_state
+    SET state_data = ${JSON.stringify(state)}, updated_at = NOW()
+    WHERE user_id = ${userId} AND conversation_key = 'exercise_ru_he'
+  `;
+
+  // Check if any option is too long for inline buttons
+  const MAX_BUTTON_LENGTH = 40;
+  const hasLongOptions = options.some(opt => opt.length > MAX_BUTTON_LENGTH);
+
+  // Create keyboard
+  const keyboard = new InlineKeyboard();
+
+  if (hasLongOptions) {
+    // Use numbered buttons when options are long
+    options.forEach((option, index) => {
+      keyboard.text(`${index + 1}`, `ruhe_answer_${questionIndex}_${index}`);
+      if (index % 2 === 1) keyboard.row();
+    });
+  } else {
+    // Use full text on buttons when options are short
+    options.forEach((option, index) => {
+      keyboard.text(option, `ruhe_answer_${questionIndex}_${index}`).row();
+    });
+  }
+
+  // Build question text
+  let questionText = `🔤 **Русский → Иврит** (${questionIndex + 1}/${state.words.length})\n\nКак будет на иврите:\n\n**${word.russian_translation}**`;
+
+  // Add numbered options only if using numbered buttons
+  if (hasLongOptions) {
+    const optionsText = options.map((opt, idx) => `${idx + 1}. ${opt}`).join('\n');
+    questionText += `\n\n${optionsText}`;
+  }
+
+  await ctx.editMessageText(questionText, {
+    reply_markup: keyboard,
+    parse_mode: 'Markdown',
+  });
+}
+
+/**
+ * Handle Russian → Hebrew answer
+ */
+exercisesHandler.callbackQuery(/^ruhe_answer_(\d+)_(\d+)$/, async (ctx) => {
+  await ctx.answerCallbackQuery();
+
+  if (!ctx.from) return;
+  const userId = ctx.from.id;
+
+  const match = ctx.callbackQuery.data.match(/^ruhe_answer_(\d+)_(\d+)$/);
+  if (!match) return;
+
+  const questionIndex = parseInt(match[1]);
+  const answerIndex = parseInt(match[2]);
+
+  try {
+    const stateResult = await sql`
+      SELECT state_data FROM conversation_state
+      WHERE user_id = ${userId} AND conversation_key = 'exercise_ru_he'
+    `;
+
+    if (stateResult.length === 0) return;
+
+    const state = stateResult[0].state_data as any;
+    const word = state.words[questionIndex];
+    const isCorrect = answerIndex === state.currentQuestion.correctIndex;
+    const responseTime = Date.now() - state.currentQuestion.questionTime;
+
+    // Record result
+    await recordExerciseResult(userId, word.id, 'mcq_ru_he', isCorrect, responseTime);
+
+    if (isCorrect) {
+      state.correctCount++;
+    }
+
+    state.currentIndex = questionIndex + 1;
+
+    await sql`
+      UPDATE conversation_state
+      SET state_data = ${JSON.stringify(state)}, updated_at = NOW()
+      WHERE user_id = ${userId} AND conversation_key = 'exercise_ru_he'
+    `;
+
+    // Show feedback
+    const feedback = isCorrect
+      ? '✅ Правильно!'
+      : `❌ Неправильно. Правильный ответ: ${word.hebrew_word}`;
+
+    await ctx.answerCallbackQuery({ text: feedback });
+
+    // Next question
+    await showRussianToHebrewQuestion(ctx, userId, questionIndex + 1);
+
+  } catch (error: any) {
+    logger.error('Error handling ru_he answer:', error);
+  }
+});
+
+/**
+ * Start Flashcard exercise
+ */
+exercisesHandler.callbackQuery('exercise_flashcards', async (ctx) => {
+  await ctx.answerCallbackQuery();
+
+  if (!ctx.from) return;
+  const userId = ctx.from.id;
+
+  try {
+    const user = await getUserById(userId);
+    if (!user || !user.current_level) {
+      await ctx.editMessageText('Сначала пройдите тест. Используйте /start');
+      return;
+    }
+
+    const words = await getWordsForExercise(userId, user.current_level, 10); // More words for flashcards
+
+    if (words.length === 0) {
+      await ctx.editMessageText(
+        'У вас нет слов для упражнений. Сначала изучите новые слова!',
+        {
+          reply_markup: new InlineKeyboard()
+            .text('📚 Новые слова', 'daily_words')
+            .text('📚 Меню', 'main_menu'),
+        }
+      );
+      return;
+    }
+
+    // Store exercise state
+    await sql`
+      INSERT INTO conversation_state (user_id, conversation_key, state_data)
+      VALUES (
+        ${userId},
+        'exercise_flashcards',
+        ${JSON.stringify({
+          words: words.map(w => ({ id: w.id, hebrew_word: w.hebrew_word, russian_translation: w.russian_translation, example_sentence_hebrew: w.example_sentence_hebrew, example_sentence_russian: w.example_sentence_russian })),
+          currentIndex: 0,
+          correctCount: 0,
+          startTime: Date.now(),
+        })}
+      )
+      ON CONFLICT (user_id)
+      DO UPDATE SET
+        conversation_key = 'exercise_flashcards',
+        state_data = ${JSON.stringify({
+          words: words.map(w => ({ id: w.id, hebrew_word: w.hebrew_word, russian_translation: w.russian_translation, example_sentence_hebrew: w.example_sentence_hebrew, example_sentence_russian: w.example_sentence_russian })),
+          currentIndex: 0,
+          correctCount: 0,
+          startTime: Date.now(),
+        })},
+        updated_at = NOW()
+    `;
+
+    await showFlashcard(ctx, userId, 0);
+
+  } catch (error: any) {
+    logger.error('Error starting flashcards:', error);
+    await ctx.editMessageText('Ошибка. Попробуйте позже.');
+  }
+});
+
+/**
+ * Show flashcard
+ */
+async function showFlashcard(ctx: BotContext, userId: number, cardIndex: number) {
+  const stateResult = await sql`
+    SELECT state_data FROM conversation_state
+    WHERE user_id = ${userId} AND conversation_key = 'exercise_flashcards'
+  `;
+
+  if (stateResult.length === 0) {
+    await ctx.editMessageText('Ошибка: состояние не найдено. Начните заново.');
+    return;
+  }
+
+  const state = stateResult[0].state_data as any;
+  const word = state.words[cardIndex];
+
+  if (!word) {
+    // Exercise complete
+    await showExerciseResults(ctx, userId, state, 'exercise_flashcards');
+    return;
+  }
+
+  // Store card time
+  state.currentCardTime = Date.now();
+  await sql`
+    UPDATE conversation_state
+    SET state_data = ${JSON.stringify(state)}, updated_at = NOW()
+    WHERE user_id = ${userId} AND conversation_key = 'exercise_flashcards'
+  `;
+
+  const keyboard = new InlineKeyboard()
+    .text('🔍 Показать ответ', `flashcard_reveal_${cardIndex}`);
+
+  await ctx.editMessageText(
+    `🎴 **Флэшкарта** (${cardIndex + 1}/${state.words.length})\n\nВспомните перевод:\n\n**${word.hebrew_word}**\n\n📖 ${word.example_sentence_hebrew}\n\n_Постарайтесь вспомнить перевод, затем нажмите кнопку для проверки_`,
+    {
+      reply_markup: keyboard,
+      parse_mode: 'Markdown',
+    }
+  );
+}
+
+/**
+ * Reveal flashcard answer
+ */
+exercisesHandler.callbackQuery(/^flashcard_reveal_(\d+)$/, async (ctx) => {
+  await ctx.answerCallbackQuery();
+
+  if (!ctx.from) return;
+  const userId = ctx.from.id;
+
+  const match = ctx.callbackQuery.data.match(/^flashcard_reveal_(\d+)$/);
+  if (!match) return;
+
+  const cardIndex = parseInt(match[1]);
+
+  try {
+    const stateResult = await sql`
+      SELECT state_data FROM conversation_state
+      WHERE user_id = ${userId} AND conversation_key = 'exercise_flashcards'
+    `;
+
+    if (stateResult.length === 0) return;
+
+    const state = stateResult[0].state_data as any;
+    const word = state.words[cardIndex];
+
+    const keyboard = new InlineKeyboard()
+      .text('✅ Знал(а)', `flashcard_knew_${cardIndex}`)
+      .text('❌ Не знал(а)', `flashcard_didnt_know_${cardIndex}`)
+      .row();
+
+    await ctx.editMessageText(
+      `🎴 **Флэшкарта** (${cardIndex + 1}/${state.words.length})\n\n**${word.hebrew_word}**\n\n💭 **${word.russian_translation}**\n\n📖 ${word.example_sentence_hebrew}\n   _${word.example_sentence_russian}_\n\n**Вы знали перевод?**`,
+      {
+        reply_markup: keyboard,
+        parse_mode: 'Markdown',
+      }
+    );
+
+  } catch (error: any) {
+    logger.error('Error revealing flashcard:', error);
+  }
+});
+
+/**
+ * Handle flashcard self-assessment
+ */
+exercisesHandler.callbackQuery(/^flashcard_(knew|didnt_know)_(\d+)$/, async (ctx) => {
+  await ctx.answerCallbackQuery();
+
+  if (!ctx.from) return;
+  const userId = ctx.from.id;
+
+  const match = ctx.callbackQuery.data.match(/^flashcard_(knew|didnt_know)_(\d+)$/);
+  if (!match) return;
+
+  const knew = match[1] === 'knew';
+  const cardIndex = parseInt(match[2]);
+
+  try {
+    const stateResult = await sql`
+      SELECT state_data FROM conversation_state
+      WHERE user_id = ${userId} AND conversation_key = 'exercise_flashcards'
+    `;
+
+    if (stateResult.length === 0) return;
+
+    const state = stateResult[0].state_data as any;
+    const word = state.words[cardIndex];
+    const responseTime = Date.now() - state.currentCardTime;
+
+    // Record result
+    await recordExerciseResult(userId, word.id, 'flashcard', knew, responseTime);
+
+    if (knew) {
+      state.correctCount++;
+    }
+
+    state.currentIndex = cardIndex + 1;
+
+    await sql`
+      UPDATE conversation_state
+      SET state_data = ${JSON.stringify(state)}, updated_at = NOW()
+      WHERE user_id = ${userId} AND conversation_key = 'exercise_flashcards'
+    `;
+
+    // Next card
+    await showFlashcard(ctx, userId, cardIndex + 1);
+
+  } catch (error: any) {
+    logger.error('Error handling flashcard assessment:', error);
+  }
+});
+
+/**
  * Show exercise results
  */
 async function showExerciseResults(ctx: BotContext, userId: number, state: any, exerciseType: string) {
