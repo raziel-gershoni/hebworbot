@@ -8,6 +8,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { bot } from '../src/bot/index.js';
 import { startHandler } from '../src/bot/handlers/start.js';
 import { assessmentHandler } from '../src/bot/handlers/level-assessment.js';
+import { dailyWordsHandler } from '../src/bot/handlers/daily-words.js';
 import { logger } from '../src/utils/logger.js';
 import { validateConfig } from '../src/utils/config.js';
 
@@ -23,6 +24,7 @@ try {
 // Register all handlers
 bot.use(startHandler);
 bot.use(assessmentHandler);
+bot.use(dailyWordsHandler);
 
 // Log when webhook is ready
 logger.info('Webhook handler initialized');
