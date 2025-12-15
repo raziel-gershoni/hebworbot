@@ -30,16 +30,32 @@ logger.info('Webhook handler initialized');
 // Vercel serverless function handler
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
+    logger.info('Webhook received:', {
+      method: req.method,
+      hasBody: !!req.body,
+      updateId: req.body?.update_id,
+    });
+
     if (req.method !== 'POST') {
       return res.status(405).json({ error: 'Method not allowed' });
+    }
+
+    if (!req.body) {
+      logger.error('No body in request');
+      return res.status(400).json({ error: 'No body' });
     }
 
     // Handle the update with grammY
     await bot.handleUpdate(req.body);
 
+    logger.info('Update handled successfully');
     return res.status(200).json({ ok: true });
   } catch (error: any) {
-    logger.error('Webhook error:', error);
+    logger.error('Webhook error:', {
+      message: error?.message,
+      stack: error?.stack,
+      error: error,
+    });
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

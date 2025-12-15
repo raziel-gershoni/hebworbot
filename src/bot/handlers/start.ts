@@ -17,7 +17,13 @@ export const startHandler = new Composer<BotContext>();
  * /start command
  */
 startHandler.command('start', async (ctx) => {
+  logger.info('Start command received', {
+    from: ctx.from?.id,
+    chat: ctx.chat?.id,
+  });
+
   if (!ctx.from) {
+    logger.warn('No from user in context');
     return;
   }
 
