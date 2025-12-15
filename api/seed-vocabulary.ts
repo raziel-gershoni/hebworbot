@@ -71,9 +71,12 @@ async function insertVocabulary(items: any[]) {
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
-    // Security check
+    // Security check - use Gemini API key as secret (simpler than bot token)
     const secret = req.query.secret as string;
-    if (secret !== config.telegram.botToken.substring(0, 20)) {
+    const validSecret = config.gemini.apiKey.substring(0, 20);
+
+    if (secret !== validSecret) {
+      logger.warn('Unauthorized seed-vocabulary attempt', { providedSecret: secret?.substring(0, 5) });
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
