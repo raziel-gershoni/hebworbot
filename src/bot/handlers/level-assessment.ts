@@ -148,31 +148,45 @@ async function showAssessmentQuestion(ctx: BotContext, userId: number, questionI
     WHERE user_id = ${userId} AND conversation_key = 'assessment'
   `;
 
-  // Create keyboard with numbered buttons (1, 2, 3, 4)
+  // Check if any option is too long for inline buttons
+  const MAX_BUTTON_LENGTH = 40;
+  const hasLongOptions = shuffled.some(opt => opt.length > MAX_BUTTON_LENGTH);
+
+  // Create keyboard
   const keyboard = new InlineKeyboard();
 
-  shuffled.forEach((option: string, index: number) => {
-    keyboard.text(`${index + 1}`, `answer_${questionIndex}_${index}`);
-    // Add two buttons per row for compact layout
-    if (index % 2 === 1) {
-      keyboard.row();
-    }
-  });
+  if (hasLongOptions) {
+    // Use numbered buttons (1, 2, 3, 4) when options are long
+    shuffled.forEach((option: string, index: number) => {
+      keyboard.text(`${index + 1}`, `answer_${questionIndex}_${index}`);
+      // Add two buttons per row for compact layout
+      if (index % 2 === 1) {
+        keyboard.row();
+      }
+    });
+  } else {
+    // Use full text on buttons when options are short
+    shuffled.forEach((option: string, index: number) => {
+      keyboard.text(option, `answer_${questionIndex}_${index}`).row();
+    });
+  }
 
-  // Display full options in message text
-  const optionsText = shuffled
-    .map((option, idx) => `${idx + 1}. ${option}`)
-    .join('\n');
-
-  const questionText = `
+  // Build question text
+  let questionText = `
 **Вопрос ${questionIndex + 1} из ${state.questions.length}**
 
 ${question.russian}
 
 **${question.hebrew}**
-
-${optionsText}
 `;
+
+  // Add numbered options only if using numbered buttons
+  if (hasLongOptions) {
+    const optionsText = shuffled
+      .map((option, idx) => `${idx + 1}. ${option}`)
+      .join('\n');
+    questionText += `\n${optionsText}\n`;
+  }
 
   if (ctx.callbackQuery) {
     await ctx.editMessageText(questionText, {
@@ -296,9 +310,28 @@ async function analyzeAndShowResults(ctx: BotContext, userId: number, state: any
       WHERE user_id = ${userId} AND conversation_key = 'assessment'
     `;
 
+    // Build detailed results showing answers
+    const answersBreakdown = state.questions.map((q: any, i: number) => {
+      const userAnswer = q.options[state.answers[i]];
+      const correctAnswer = q.options[q.correctIndex];
+      const isCorrect = state.answers[i] === q.correctIndex;
+
+      return `${i + 1}. **${q.hebrew}** (${q.level})
+${isCorrect ? '✅' : '❌'} Ваш ответ: ${userAnswer}
+${isCorrect ? '' : `✓ Правильно: ${correctAnswer}\n`}`;
+    }).join('\n');
+
+    // Calculate score
+    const correctCount = state.questions.filter((q: any, i: number) =>
+      state.answers[i] === q.correctIndex
+    ).length;
+    const totalCount = state.questions.length;
+
     // Show results
     const resultText = `
 🎉 **Тест завершён!**
+
+**Результат: ${correctCount}/${totalCount} правильных ответов**
 
 **Ваш уровень: ${analysis.level}**
 
@@ -310,6 +343,12 @@ ${analysis.strengths.map(s => `• ${s}`).join('\n')}
 
 **Рекомендации:**
 ${analysis.recommendations.map(r => `• ${r}`).join('\n')}
+
+━━━━━━━━━━━━━━━━
+**📋 Детальные результаты:**
+
+${answersBreakdown}
+━━━━━━━━━━━━━━━━
 
 Теперь вы можете начать изучение слов на вашем уровне!
 `;
