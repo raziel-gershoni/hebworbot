@@ -53,6 +53,20 @@ Options: ["Я люблю читать книги", "Я люблю писать �
 Correct: 0
 
 Generate 7 such questions now.
+
+Return the response in this exact JSON format:
+{
+  "questions": [
+    {
+      "hebrew": "שלום",
+      "russian": "Что означает...",
+      "options": ["Мир/Привет", "Спасибо", "Пожалуйста", "До свидания"],
+      "correctIndex": 0,
+      "level": "A1"
+    },
+    ...
+  ]
+}
 `;
 
   logger.info('Generating assessment questions with Gemini');
@@ -133,6 +147,14 @@ ${levelScores}
 4. Рекомендации для изучения (2-3 пункта на русском языке)
 
 Отвечайте на РУССКОМ языке.
+
+Return the response in this exact JSON format:
+{
+  "level": "A2",
+  "reasoning": "Объяснение...",
+  "strengths": ["Сильная сторона 1", "Сильная сторона 2"],
+  "recommendations": ["Рекомендация 1", "Рекомендация 2"]
+}
 `;
 
   logger.info('Analyzing assessment results with Gemini');
