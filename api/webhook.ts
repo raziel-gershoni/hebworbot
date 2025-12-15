@@ -11,6 +11,7 @@ import { assessmentHandler } from '../src/bot/handlers/level-assessment.js';
 import { dailyWordsHandler } from '../src/bot/handlers/daily-words.js';
 import { exercisesHandler } from '../src/bot/handlers/exercises.js';
 import { progressHandler } from '../src/bot/handlers/progress.js';
+import { settingsHandler } from '../src/bot/handlers/settings.js';
 import { logger } from '../src/utils/logger.js';
 import { validateConfig } from '../src/utils/config.js';
 
@@ -29,6 +30,7 @@ bot.use(assessmentHandler);
 bot.use(dailyWordsHandler);
 bot.use(exercisesHandler);
 bot.use(progressHandler);
+bot.use(settingsHandler);
 
 // Log when webhook is ready
 logger.info('Webhook handler initialized');
