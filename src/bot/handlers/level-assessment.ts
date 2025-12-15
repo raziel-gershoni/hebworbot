@@ -15,6 +15,29 @@ import { logger } from '../../utils/logger.js';
 export const assessmentHandler = new Composer<BotContext>();
 
 /**
+ * Retake assessment callback
+ */
+assessmentHandler.callbackQuery('retake_assessment', async (ctx) => {
+  await ctx.answerCallbackQuery();
+
+  if (!ctx.from) return;
+
+  const userId = ctx.from.id;
+  const firstName = ctx.from.first_name;
+
+  await ctx.editMessageText(
+    `${firstName}, вы хотите пройти тест заново?\n\nЭто поможет определить, повысился ли ваш уровень владения ивритом. Ваш текущий прогресс будет сохранён.`,
+    {
+      reply_markup: new InlineKeyboard()
+        .text('🎯 Да, начать тест', 'start_assessment')
+        .row()
+        .text('📚 Главное меню', 'main_menu'),
+      parse_mode: 'Markdown',
+    }
+  );
+});
+
+/**
  * Start assessment callback
  */
 assessmentHandler.callbackQuery('start_assessment', async (ctx) => {

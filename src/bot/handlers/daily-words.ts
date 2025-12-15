@@ -73,14 +73,54 @@ dailyWordsHandler.callbackQuery('daily_words', async (ctx) => {
     const newWords = await getNewWordsForUser(userId, user.current_level, wordsCount);
 
     if (newWords.length === 0) {
-      await ctx.editMessageText(
-        `🎉 Отлично! Вы уже изучили все слова уровня **${user.current_level}**!\n\nПопробуйте повысить свой уровень или повторите уже изученные слова.`,
-        {
+      // Check if user is ready for level up
+      const masteredWords = await sql`
+        SELECT COUNT(*) as count
+        FROM user_vocabulary uv
+        JOIN vocabulary v ON uv.vocabulary_id = v.id
+        WHERE uv.user_id = ${userId}
+          AND v.cefr_level = ${user.current_level}
+          AND uv.status = 'mastered'
+      `;
+
+      const totalLevelWords = await sql`
+        SELECT COUNT(*) as count
+        FROM vocabulary
+        WHERE cefr_level = ${user.current_level}
+      `;
+
+      const mastered = parseInt(masteredWords[0].count as string);
+      const total = parseInt(totalLevelWords[0].count as string);
+      const masteredPercentage = total > 0 ? Math.round((mastered / total) * 100) : 0;
+
+      const levelOrder = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
+      const currentLevelIndex = levelOrder.indexOf(user.current_level);
+      const hasNextLevel = currentLevelIndex < levelOrder.length - 1;
+
+      let message = `🎉 Отлично! Вы уже изучили все доступные слова уровня **${user.current_level}**!\n\n`;
+
+      if (masteredPercentage >= 70 && hasNextLevel) {
+        message += `💪 Вы освоили **${masteredPercentage}%** слов этого уровня!\n\n`;
+        message += `Готовы перейти на следующий уровень? Пройдите тест заново, чтобы узнать свой новый уровень!`;
+
+        await ctx.editMessageText(message, {
           reply_markup: new InlineKeyboard()
+            .text('🎯 Пройти тест заново', 'retake_assessment')
+            .row()
+            .text('✏️ Повторить слова', 'exercises')
+            .text('📚 Меню', 'main_menu'),
+          parse_mode: 'Markdown',
+        });
+      } else {
+        message += `Повторите изученные слова для закрепления.`;
+
+        await ctx.editMessageText(message, {
+          reply_markup: new InlineKeyboard()
+            .text('✏️ Упражнения', 'exercises')
             .text('📚 Главное меню', 'main_menu'),
           parse_mode: 'Markdown',
-        }
-      );
+        });
+      }
       return;
     }
 

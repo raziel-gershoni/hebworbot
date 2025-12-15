@@ -138,6 +138,8 @@ ${totalWords > 0 && totalExercises === 0 ? '\n💡 _Попробуйте упр�
       .text('📚 Новые слова', 'daily_words')
       .text('✏️ Упражнения', 'exercises')
       .row()
+      .text('🎯 Пройти тест заново', 'retake_assessment')
+      .row()
       .text('📚 Главное меню', 'main_menu');
 
     await ctx.editMessageText(progressText, {
