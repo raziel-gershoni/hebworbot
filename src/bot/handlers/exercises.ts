@@ -39,14 +39,27 @@ async function getWordsForExercise(userId: number, level: string, count: number 
  * Get distractor options (wrong answers) for multiple choice
  */
 async function getDistractors(correctWord: any, language: 'hebrew' | 'russian', count: number = 3) {
-  const distractors = await sql`
-    SELECT ${language === 'hebrew' ? sql`hebrew_word` : sql`russian_translation`} as option
-    FROM vocabulary
-    WHERE cefr_level = ${correctWord.cefr_level}
-      AND id != ${correctWord.id}
-    ORDER BY RANDOM()
-    LIMIT ${count}
-  `;
+  let distractors;
+
+  if (language === 'hebrew') {
+    distractors = await sql`
+      SELECT hebrew_word as option
+      FROM vocabulary
+      WHERE cefr_level = ${correctWord.cefr_level}
+        AND id != ${correctWord.id}
+      ORDER BY RANDOM()
+      LIMIT ${count}
+    `;
+  } else {
+    distractors = await sql`
+      SELECT russian_translation as option
+      FROM vocabulary
+      WHERE cefr_level = ${correctWord.cefr_level}
+        AND id != ${correctWord.id}
+      ORDER BY RANDOM()
+      LIMIT ${count}
+    `;
+  }
 
   return distractors.map(d => d.option);
 }
