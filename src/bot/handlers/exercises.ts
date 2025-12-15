@@ -270,22 +270,39 @@ async function showHebrewToRussianQuestion(ctx: BotContext, userId: number, ques
     WHERE user_id = ${userId} AND conversation_key = 'exercise_he_ru'
   `;
 
+  // Check if any option is too long for inline buttons
+  const MAX_BUTTON_LENGTH = 40;
+  const hasLongOptions = options.some(opt => opt.length > MAX_BUTTON_LENGTH);
+
   // Create keyboard
   const keyboard = new InlineKeyboard();
-  options.forEach((option, index) => {
-    keyboard.text(`${index + 1}`, `heру_answer_${questionIndex}_${index}`);
-    if (index % 2 === 1) keyboard.row();
+
+  if (hasLongOptions) {
+    // Use numbered buttons when options are long
+    options.forEach((option, index) => {
+      keyboard.text(`${index + 1}`, `heру_answer_${questionIndex}_${index}`);
+      if (index % 2 === 1) keyboard.row();
+    });
+  } else {
+    // Use full text on buttons when options are short
+    options.forEach((option, index) => {
+      keyboard.text(option, `heру_answer_${questionIndex}_${index}`).row();
+    });
+  }
+
+  // Build question text
+  let questionText = `🔤 **Иврит → Русский** (${questionIndex + 1}/${state.words.length})\n\nЧто означает:\n\n**${word.hebrew_word}**`;
+
+  // Add numbered options only if using numbered buttons
+  if (hasLongOptions) {
+    const optionsText = options.map((opt, idx) => `${idx + 1}. ${opt}`).join('\n');
+    questionText += `\n\n${optionsText}`;
+  }
+
+  await ctx.editMessageText(questionText, {
+    reply_markup: keyboard,
+    parse_mode: 'Markdown',
   });
-
-  const optionsText = options.map((opt, idx) => `${idx + 1}. ${opt}`).join('\n');
-
-  await ctx.editMessageText(
-    `🔤 **Иврит → Русский** (${questionIndex + 1}/${state.words.length})\n\nЧто означает:\n\n**${word.hebrew_word}**\n\n${optionsText}`,
-    {
-      reply_markup: keyboard,
-      parse_mode: 'Markdown',
-    }
-  );
 }
 
 /**
