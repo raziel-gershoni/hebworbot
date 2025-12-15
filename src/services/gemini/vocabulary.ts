@@ -61,10 +61,21 @@ ${wordsList}
 - **C1**: Sophisticated vocabulary, literary terms (philosophy, abstract concepts)
 - **C2**: Rare, specialized vocabulary (academic, literary, technical jargon)
 
+**CRITICAL RULES FOR CEFR LEVEL:**
+- YOU MUST assign EXACTLY ONE of these levels: A1, A2, B1, B2, C1, or C2
+- NEVER use "N/A", "Unknown", "uncertain", or any other value
+- If unsure about a rare word, assign C2 (advanced/specialized)
+- If the word is a particle, preposition, or function word, assign based on usage frequency:
+  * Very common (ב, ל, של, את) → A1
+  * Common function words → A2
+  * Less common → B1
+- ALWAYS make your best judgment - every word must have a valid CEFR level
+
 **IMPORTANT**:
 - Provide accurate, commonly-used Russian translations
 - Keep example sentences natural and simple
 - Be consistent with CEFR level assignments
+- Remember: EVERY word MUST have a valid CEFR level (A1, A2, B1, B2, C1, or C2)
 
 Return the response in this exact JSON format:
 {
