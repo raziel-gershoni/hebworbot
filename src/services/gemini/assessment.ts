@@ -21,16 +21,18 @@ export async function generateAssessmentQuestions(
   isPremium: boolean = false
 ): Promise<AssessmentQuestions> {
   const prompt = `
-You are an expert Hebrew language teacher for Russian speakers. Generate 7 multiple-choice assessment questions to determine a learner's Hebrew proficiency level (CEFR: A1-C2).
+You are an expert Hebrew language teacher for Russian speakers. Generate 9 multiple-choice assessment questions to determine a learner's Hebrew proficiency level (CEFR: A1-C2).
 
 **Requirements:**
 - Questions must be in RUSSIAN (the test-taker is a Russian speaker)
 - Hebrew words/phrases should be shown in Hebrew script
 - Include questions from different CEFR levels:
   * 2 A1 questions (basic greetings, simple words, numbers)
-  * 2 A2 questions (simple sentences, common verbs, everyday vocabulary)
+  * 1 A2 question (simple sentences, common verbs, everyday vocabulary)
   * 2 B1 questions (past tense, compound sentences, abstract concepts)
-  * 1 B2 question (idiomatic expressions, complex grammar)
+  * 2 B2 questions (idiomatic expressions, complex grammar, subjunctive)
+  * 1 C1 question (advanced idioms, nuanced meanings, literary expressions)
+  * 1 C2 question (rare vocabulary, sophisticated constructions, cultural references)
 
 **Question Format:**
 - Ask "Что означает на русском языке следующее слово/фраза на иврите: [Hebrew]?" (What does this Hebrew word/phrase mean in Russian?)
@@ -52,7 +54,7 @@ Russian question: "Что означает на русском языке сле
 Options: ["Я люблю читать книги", "Я люблю писать письма", "Я люблю смотреть фильмы", "Я люблю слушать музыку"]
 Correct: 0
 
-Generate 7 such questions now.
+Generate 9 such questions now (2×A1, 1×A2, 2×B1, 2×B2, 1×C1, 1×C2).
 
 Return the response in this exact JSON format:
 {

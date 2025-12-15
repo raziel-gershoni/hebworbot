@@ -71,6 +71,24 @@ assessmentHandler.callbackQuery('start_assessment', async (ctx) => {
 });
 
 /**
+ * Shuffle array and return shuffled array with mapping
+ */
+function shuffleOptions(options: string[], correctIndex: number): { shuffled: string[], newCorrectIndex: number } {
+  const indices = options.map((_, i) => i);
+
+  // Fisher-Yates shuffle
+  for (let i = indices.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [indices[i], indices[j]] = [indices[j], indices[i]];
+  }
+
+  const shuffled = indices.map(i => options[i]);
+  const newCorrectIndex = indices.indexOf(correctIndex);
+
+  return { shuffled, newCorrectIndex };
+}
+
+/**
  * Show a specific assessment question
  */
 async function showAssessmentQuestion(ctx: BotContext, userId: number, questionIndex: number) {
@@ -94,10 +112,30 @@ async function showAssessmentQuestion(ctx: BotContext, userId: number, questionI
     return;
   }
 
-  // Create keyboard with answer options
+  // Shuffle options for this question
+  const { shuffled, newCorrectIndex } = shuffleOptions(question.options, question.correctIndex);
+
+  // Store shuffled state for answer validation
+  if (!state.shuffledQuestions) {
+    state.shuffledQuestions = {};
+  }
+  state.shuffledQuestions[questionIndex] = {
+    options: shuffled,
+    correctIndex: newCorrectIndex
+  };
+
+  // Update state in database
+  await sql`
+    UPDATE conversation_state
+    SET state_data = ${JSON.stringify(state)},
+        updated_at = NOW()
+    WHERE user_id = ${userId} AND conversation_key = 'assessment'
+  `;
+
+  // Create keyboard with shuffled answer options
   const keyboard = new InlineKeyboard();
 
-  question.options.forEach((option: string, index: number) => {
+  shuffled.forEach((option: string, index: number) => {
     keyboard.text(option, `answer_${questionIndex}_${index}`).row();
   });
 
@@ -152,12 +190,27 @@ assessmentHandler.callbackQuery(/^answer_(\d+)_(\d+)$/, async (ctx) => {
 
     const state = stateResult[0].state_data as any;
     const question = state.questions[questionIndex];
+    const shuffledQuestion = state.shuffledQuestions?.[questionIndex];
 
-    // Record answer
-    state.answers[questionIndex] = answerIndex;
+    let isCorrect: boolean;
+    let originalAnswerIndex: number;
 
-    // Check if answer is correct
-    const isCorrect = answerIndex === question.correctIndex;
+    if (shuffledQuestion) {
+      // User selected from shuffled options
+      // Check if correct using shuffled index
+      isCorrect = answerIndex === shuffledQuestion.correctIndex;
+
+      // Map shuffled answer back to original index for analysis
+      const selectedOption = shuffledQuestion.options[answerIndex];
+      originalAnswerIndex = question.options.indexOf(selectedOption);
+    } else {
+      // No shuffling (fallback)
+      isCorrect = answerIndex === question.correctIndex;
+      originalAnswerIndex = answerIndex;
+    }
+
+    // Record answer using original index for analysis
+    state.answers[questionIndex] = originalAnswerIndex;
 
     // Update state
     await sql`
@@ -168,9 +221,13 @@ assessmentHandler.callbackQuery(/^answer_(\d+)_(\d+)$/, async (ctx) => {
     `;
 
     // Show brief feedback
+    const correctAnswer = shuffledQuestion
+      ? shuffledQuestion.options[shuffledQuestion.correctIndex]
+      : question.options[question.correctIndex];
+
     const feedback = isCorrect
       ? '✅ Правильно!'
-      : `❌ Неправильно. Правильный ответ: ${question.options[question.correctIndex]}`;
+      : `❌ Неправильно. Правильный ответ: ${correctAnswer}`;
 
     await ctx.answerCallbackQuery({ text: feedback, show_alert: false });
 
