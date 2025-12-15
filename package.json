@@ -12,6 +12,7 @@
     "migrate": "tsx scripts/migrate.ts",
     "prepare-vocabulary": "tsx scripts/prepare-vocabulary.ts",
     "seed-database": "tsx scripts/seed-database.ts",
+    "seed-vocabulary": "tsx scripts/seed-vocabulary.ts",
     "test-gemini-models": "tsx scripts/test-gemini-models.ts",
     "set-webhook": "tsx scripts/set-webhook.ts"
   },
