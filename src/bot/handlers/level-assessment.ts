@@ -72,18 +72,34 @@ assessmentHandler.callbackQuery('start_assessment', async (ctx) => {
 
 /**
  * Shuffle array and return shuffled array with mapping
+ * Uses Fisher-Yates algorithm with explicit tracking
  */
 function shuffleOptions(options: string[], correctIndex: number): { shuffled: string[], newCorrectIndex: number } {
-  const indices = options.map((_, i) => i);
+  // Create array of items with their original indices
+  const items = options.map((option, idx) => ({
+    option,
+    originalIndex: idx,
+    isCorrect: idx === correctIndex
+  }));
 
-  // Fisher-Yates shuffle
-  for (let i = indices.length - 1; i > 0; i--) {
+  // Fisher-Yates shuffle - iterate from end to beginning
+  for (let i = items.length - 1; i > 0; i--) {
+    // Random index from 0 to i (inclusive)
     const j = Math.floor(Math.random() * (i + 1));
-    [indices[i], indices[j]] = [indices[j], indices[i]];
+    // Swap items
+    [items[i], items[j]] = [items[j], items[i]];
   }
 
-  const shuffled = indices.map(i => options[i]);
-  const newCorrectIndex = indices.indexOf(correctIndex);
+  // Extract shuffled options and find new position of correct answer
+  const shuffled = items.map(item => item.option);
+  const newCorrectIndex = items.findIndex(item => item.isCorrect);
+
+  logger.debug('Shuffled options:', {
+    original: options,
+    shuffled,
+    correctIndexBefore: correctIndex,
+    correctIndexAfter: newCorrectIndex
+  });
 
   return { shuffled, newCorrectIndex };
 }

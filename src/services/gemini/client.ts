@@ -46,6 +46,46 @@ export function getModel(modelName?: string, isPremium: boolean = false): Genera
 }
 
 /**
+ * Retry logic with exponential backoff
+ */
+async function retryWithBackoff<T>(
+  fn: () => Promise<T>,
+  maxRetries: number = 3,
+  baseDelay: number = 1000
+): Promise<T> {
+  let lastError: any;
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error: any) {
+      lastError = error;
+
+      // Check if error is retryable (503 overloaded, 429 rate limit)
+      const isRetryable =
+        error.message?.includes('503') ||
+        error.message?.includes('overloaded') ||
+        error.message?.includes('429') ||
+        error.message?.includes('rate limit');
+
+      if (!isRetryable || attempt === maxRetries) {
+        throw error;
+      }
+
+      // Exponential backoff: 1s, 2s, 4s
+      const delay = baseDelay * Math.pow(2, attempt);
+      logger.warn(`Gemini API error (attempt ${attempt + 1}/${maxRetries + 1}), retrying in ${delay}ms...`, {
+        error: error.message
+      });
+
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+
+  throw lastError;
+}
+
+/**
  * Generate content with structured JSON output
  * Uses plain JSON mode without schema validation (Gemini's schema format is too restrictive)
  */
@@ -59,40 +99,42 @@ export async function generateStructured<T>(
 
   const startTime = Date.now();
 
-  try {
-    logger.debug(`Gemini request: ${prompt.substring(0, 100)}...`);
+  return retryWithBackoff(async () => {
+    try {
+      logger.debug(`Gemini request: ${prompt.substring(0, 100)}...`);
 
-    // Use JSON mode without schema enforcement
-    // Gemini will generate JSON, we validate with Zod after
-    const result = await model.generateContent({
-      contents: [{ role: 'user', parts: [{ text: prompt }] }],
-      generationConfig: {
-        responseMimeType: 'application/json',
-        // Don't use responseSchema - it's too restrictive
-      },
-    });
+      // Use JSON mode without schema enforcement
+      // Gemini will generate JSON, we validate with Zod after
+      const result = await model.generateContent({
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        generationConfig: {
+          responseMimeType: 'application/json',
+          // Don't use responseSchema - it's too restrictive
+        },
+      });
 
-    const responseTime = Date.now() - startTime;
-    logger.debug(`Gemini response time: ${responseTime}ms`);
+      const responseTime = Date.now() - startTime;
+      logger.debug(`Gemini response time: ${responseTime}ms`);
 
-    const text = result.response.text();
+      const text = result.response.text();
 
-    logger.debug('Raw Gemini response:', text.substring(0, 500));
+      logger.debug('Raw Gemini response:', text.substring(0, 500));
 
-    const parsed = JSON.parse(text);
+      const parsed = JSON.parse(text);
 
-    // Validate with Zod (this catches any schema issues)
-    const validated = schema.parse(parsed);
+      // Validate with Zod (this catches any schema issues)
+      const validated = schema.parse(parsed);
 
-    logger.info('Gemini structured output validated successfully');
-    return validated;
-  } catch (error: any) {
-    logger.error('Gemini API error:', {
-      message: error.message,
-      prompt: prompt.substring(0, 200),
-    });
-    throw new Error(`Gemini API failed: ${error.message}`);
-  }
+      logger.info('Gemini structured output validated successfully');
+      return validated;
+    } catch (error: any) {
+      logger.error('Gemini API error:', {
+        message: error.message,
+        prompt: prompt.substring(0, 200),
+      });
+      throw new Error(`Gemini API failed: ${error.message}`);
+    }
+  });
 }
 
 /**
@@ -105,13 +147,15 @@ export async function generateText(
 ): Promise<string> {
   const model = getModel(modelName, isPremium);
 
-  try {
-    const result = await model.generateContent(prompt);
-    return result.response.text();
-  } catch (error: any) {
-    logger.error('Gemini API error:', error);
-    throw new Error(`Gemini API failed: ${error.message}`);
-  }
+  return retryWithBackoff(async () => {
+    try {
+      const result = await model.generateContent(prompt);
+      return result.response.text();
+    } catch (error: any) {
+      logger.error('Gemini API error:', error);
+      throw new Error(`Gemini API failed: ${error.message}`);
+    }
+  });
 }
 
 /**
