@@ -4,16 +4,42 @@
  * Load and manage Hebrew word frequency lists
  */
 
+import { readFileSync } from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
 export interface RawHebrewWord {
   word: string;
   frequency_rank: number;
+  cefr_level?: string; // Optional: assigned from frequency list
+}
+
+// Cache for loaded vocabulary
+let cachedVocabulary: RawHebrewWord[] | null = null;
+
+/**
+ * Load vocabulary from JSON file
+ */
+function loadVocabularyFromFile(): RawHebrewWord[] {
+  if (cachedVocabulary) {
+    return cachedVocabulary;
+  }
+
+  const dataPath = join(__dirname, '../../../data/hebrew-frequency-5k.json');
+  const content = readFileSync(dataPath, 'utf-8');
+  const words = JSON.parse(content);
+
+  cachedVocabulary = words;
+  return words;
 }
 
 /**
- * Basic Hebrew vocabulary starter list (most common words)
- * This will be expanded with a larger frequency list
+ * Fallback vocabulary (legacy - kept for reference)
  */
-export const STARTER_VOCABULARY: RawHebrewWord[] = [
+export const LEGACY_STARTER_VOCABULARY: RawHebrewWord[] = [
   // A1 Level - Basic greetings and common words
   { word: 'שלום', frequency_rank: 1 },
   { word: 'תודה', frequency_rank: 2 },
@@ -275,9 +301,7 @@ export const STARTER_VOCABULARY: RawHebrewWord[] = [
  * Load Hebrew words from frequency list
  */
 export function loadVocabulary(): RawHebrewWord[] {
-  // For now, return starter vocabulary
-  // TODO: Load from external file or API
-  return STARTER_VOCABULARY;
+  return loadVocabularyFromFile();
 }
 
 /**
