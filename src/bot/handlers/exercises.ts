@@ -328,7 +328,7 @@ async function showHebrewToRussianQuestion(ctx: BotContext, userId: number, ques
   }
 
   // Build question text
-  let questionText = `🔤 **Иврит → Русский** (${questionIndex + 1}/${state.words.length})\n\nЧто означает:\n\n**${word.hebrew_word}**`;
+  let questionText = `🔤 **Иврит → Русский** (${questionIndex + 1}/${state.words.length})\n\nЧто означает:\n\n**${word.hebrew_word}**\n`;
 
   // Add numbered options only if using numbered buttons
   if (hasLongOptions) {
@@ -525,7 +525,7 @@ async function showRussianToHebrewQuestion(ctx: BotContext, userId: number, ques
   }
 
   // Build question text
-  let questionText = `🔤 **Русский → Иврит** (${questionIndex + 1}/${state.words.length})\n\nКак будет на иврите:\n\n**${word.russian_translation}**`;
+  let questionText = `🔤 **Русский → Иврит** (${questionIndex + 1}/${state.words.length})\n\nКак будет на иврите:\n\n**${word.russian_translation}**\n`;
 
   // Add numbered options only if using numbered buttons
   if (hasLongOptions) {
@@ -695,7 +695,7 @@ async function showFlashcard(ctx: BotContext, userId: number, cardIndex: number)
     .text('🔍 Показать ответ', `flashcard_reveal_${cardIndex}`);
 
   await ctx.editMessageText(
-    `🎴 **Флэшкарта** (${cardIndex + 1}/${state.words.length})\n\nВспомните перевод:\n\n**${word.hebrew_word}**\n\n📖 ${word.example_sentence_hebrew}\n\n_Постарайтесь вспомнить перевод, затем нажмите кнопку для проверки_`,
+    `🎴 **Флэшкарта** (${cardIndex + 1}/${state.words.length})\n\nВспомните перевод:\n\n**${word.hebrew_word}**\n\n📖 ${word.example_sentence_hebrew}\n\n_Постарайтесь вспомнить перевод, затем нажмите кнопку для проверки_\n`,
     {
       reply_markup: keyboard,
       parse_mode: 'Markdown',
@@ -734,7 +734,7 @@ exercisesHandler.callbackQuery(/^flashcard_reveal_(\d+)$/, async (ctx) => {
       .row();
 
     await ctx.editMessageText(
-      `🎴 **Флэшкарта** (${cardIndex + 1}/${state.words.length})\n\n**${word.hebrew_word}**\n\n💭 **${word.russian_translation}**\n\n📖 ${word.example_sentence_hebrew}\n   _${word.example_sentence_russian}_\n\n**Вы знали перевод?**`,
+      `🎴 **Флэшкарта** (${cardIndex + 1}/${state.words.length})\n\n**${word.hebrew_word}**\n\n💭 **${word.russian_translation}**\n\n📖 ${word.example_sentence_hebrew}\n   _${word.example_sentence_russian}_\n\n**Вы знали перевод?**\n`,
       {
         reply_markup: keyboard,
         parse_mode: 'Markdown',

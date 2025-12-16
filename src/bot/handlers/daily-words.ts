@@ -301,7 +301,7 @@ dailyWordsHandler.callbackQuery('daily_words', async (ctx) => {
     // Display words
     const wordsText = newWords.map((word, index) => {
       const levelBadge = word.cefr_level !== user.current_level ? ` [${word.cefr_level}]` : '';
-      return `**${index + 1}. ${word.hebrew_word}**${levelBadge}\n💭 ${word.russian_translation}\n📖 ${word.example_sentence_hebrew}\n   _${word.example_sentence_russian}_`;
+      return `**${index + 1}.**\n**${word.hebrew_word}**${levelBadge}\n💭 ${word.russian_translation}\n📖 ${word.example_sentence_hebrew}\n   _${word.example_sentence_russian}_`;
     }).join('\n\n');
 
     // Build mastery progress info
