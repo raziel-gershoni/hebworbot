@@ -1,4 +1,4 @@
-/**
+/*
  * Settings Handler
  *
  * User preferences and settings
@@ -12,7 +12,7 @@ import { logger } from '../../utils/logger.js';
 
 export const settingsHandler = new Composer<BotContext>();
 
-/**
+/*
  * Settings callback - show settings menu
  */
 settingsHandler.callbackQuery('settings', async (ctx) => {
@@ -33,12 +33,12 @@ settingsHandler.callbackQuery('settings', async (ctx) => {
     const currentWordsCount = user.daily_words_count || 5;
 
     const settingsText = `
-⚙️ **Настройки**
+⚙️ *Настройки*
 
-**Текущие настройки:**
+*Текущие настройки:*
 
-📚 Слов за раз: **${currentWordsCount}**
-🎓 Уровень: **${user.current_level || 'не определён'}**
+📚 Слов за раз: *${currentWordsCount}*
+🎓 Уровень: *${user.current_level || 'не определён'}*
 
 ━━━━━━━━━━━━━━━━
 
@@ -63,7 +63,7 @@ settingsHandler.callbackQuery('settings', async (ctx) => {
   }
 });
 
-/**
+/*
  * Words count settings
  */
 settingsHandler.callbackQuery('settings_words', async (ctx) => {
@@ -87,7 +87,7 @@ settingsHandler.callbackQuery('settings_words', async (ctx) => {
       .text('◀️ Назад', 'settings');
 
     await ctx.editMessageText(
-      `📚 **Количество слов за раз**\n\nВыберите, сколько новых слов вы хотите получать за один раз:\n\n• **5 слов** - быстрое изучение\n• **7 слов** - оптимально\n• **10 слов** - интенсивное обучение\n\nТекущая настройка: **${currentWordsCount} слов**`,
+      `📚 *Количество слов за раз*\n\nВыберите, сколько новых слов вы хотите получать за один раз:\n\n• *5 слов* - быстрое изучение\n• *7 слов* - оптимально\n• *10 слов* - интенсивное обучение\n\nТекущая настройка: *${currentWordsCount} слов*`,
       {
         reply_markup: keyboard,
         parse_mode: 'Markdown',
@@ -99,7 +99,7 @@ settingsHandler.callbackQuery('settings_words', async (ctx) => {
   }
 });
 
-/**
+/*
  * Set words count handlers
  */
 settingsHandler.callbackQuery(/^set_words_(\d+)$/, async (ctx) => {
@@ -128,12 +128,12 @@ settingsHandler.callbackQuery(/^set_words_(\d+)$/, async (ctx) => {
     if (!user) return;
 
     const settingsText = `
-⚙️ **Настройки**
+⚙️ *Настройки*
 
-**Текущие настройки:**
+*Текущие настройки:*
 
-📚 Слов за раз: **${wordsCount}**
-🎓 Уровень: **${user.current_level || 'не определён'}**
+📚 Слов за раз: *${wordsCount}*
+🎓 Уровень: *${user.current_level || 'не определён'}*
 
 ━━━━━━━━━━━━━━━━
 

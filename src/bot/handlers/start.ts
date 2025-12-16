@@ -1,4 +1,4 @@
-/**
+/*
  * /start Command Handler
  *
  * Handle user onboarding and initial setup
@@ -13,7 +13,7 @@ import { logger } from '../../utils/logger.js';
 
 export const startHandler = new Composer<BotContext>();
 
-/**
+/*
  * /start command
  */
 startHandler.command('start', async (ctx) => {
@@ -75,7 +75,7 @@ startHandler.command('start', async (ctx) => {
       await ctx.reply(
         `С возвращением, ${firstName}! 👋
 
-Ваш текущий уровень: **${user.current_level}**
+Ваш текущий уровень: *${user.current_level}*
 
 Чем займёмся сегодня?`,
         {
@@ -93,7 +93,7 @@ startHandler.command('start', async (ctx) => {
   }
 });
 
-/**
+/*
  * Main menu callback
  */
 startHandler.callbackQuery('main_menu', async (ctx) => {

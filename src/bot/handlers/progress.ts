@@ -1,4 +1,4 @@
-/**
+/*
  * Progress Handler
  *
  * Display user's learning progress and statistics
@@ -14,7 +14,7 @@ import { LEARNING_CONFIG } from '../../utils/config.js';
 
 export const progressHandler = new Composer<BotContext>();
 
-/**
+/*
  * Progress callback - show user statistics
  */
 progressHandler.callbackQuery('progress', async (ctx) => {
@@ -109,26 +109,26 @@ progressHandler.callbackQuery('progress', async (ctx) => {
     const nextLevel = getNextLevel(user.current_level);
 
     // Build mastery info
-    let masteryInfo = `**Освоение уровня ${user.current_level}:** ${masteryPercentage}%\n[${masteryBar}]\n`;
+    let masteryInfo = `*Освоение уровня ${user.current_level}:* ${masteryPercentage}%\n[${masteryBar}]\n`;
     if (masteryPercentage >= LEARNING_CONFIG.PREVIEW_THRESHOLD && nextLevel) {
-      masteryInfo += `\n🔓 **Открыт предпросмотр уровня ${nextLevel}!**\n`;
+      masteryInfo += `\n🔓 *Открыт предпросмотр уровня ${nextLevel}!*\n`;
     }
     if (masteryPercentage >= LEARNING_CONFIG.ADVANCED_THRESHOLD && nextLevel) {
-      masteryInfo += `🎯 **Скоро повышение до ${nextLevel}!**\n`;
+      masteryInfo += `🎯 *Скоро повышение до ${nextLevel}!*\n`;
     }
     if (masteryPercentage >= LEARNING_CONFIG.AUTO_ADVANCE_THRESHOLD && nextLevel) {
-      masteryInfo += `✨ **Готовы к ${nextLevel}!** Автоматическое повышение при следующем изучении слов.\n`;
+      masteryInfo += `✨ *Готовы к ${nextLevel}!* Автоматическое повышение при следующем изучении слов.\n`;
     }
 
     // Build progress message
     const progressText = `
-📊 **Ваш прогресс**
+📊 *Ваш прогресс*
 
-**Текущий уровень:** ${user.current_level}
+*Текущий уровень:* ${user.current_level}
 ${masteryInfo}
 
 ━━━━━━━━━━━━━━━━
-**📚 Словарный запас** (${totalWords} слов)
+*📚 Словарный запас* (${totalWords} слов)
 
 🟡 Изучаю: ${learning}
 🔵 Повторяю: ${reviewing}
@@ -137,14 +137,14 @@ ${masteryInfo}
 ${totalWords > 0 ? `📈 Прогресс: ${Math.round((mastered / totalWords) * 100)}% освоено` : ''}
 
 ━━━━━━━━━━━━━━━━
-**✏️ Упражнения** (${totalExercises} попыток)
+*✏️ Упражнения* (${totalExercises} попыток)
 
-Точность: **${overallAccuracy}%**
+Точность: *${overallAccuracy}%*
 
 ${exerciseBreakdown.length > 0 ? exerciseBreakdown.join('\n') : '  _Пока нет данных_'}
 
 ━━━━━━━━━━━━━━━━
-**📅 Активность (7 дней)**
+*📅 Активность (7 дней)*
 
 • Активных дней: ${activeDays}
 • Всего упражнений: ${recentExercises}

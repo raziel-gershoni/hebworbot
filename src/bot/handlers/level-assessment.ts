@@ -1,4 +1,4 @@
-/**
+/*
  * Level Assessment Handler
  *
  * Handle Hebrew proficiency level assessment flow
@@ -14,7 +14,7 @@ import { logger } from '../../utils/logger.js';
 
 export const assessmentHandler = new Composer<BotContext>();
 
-/**
+/*
  * Retake assessment callback
  */
 assessmentHandler.callbackQuery('retake_assessment', async (ctx) => {
@@ -37,7 +37,7 @@ assessmentHandler.callbackQuery('retake_assessment', async (ctx) => {
   );
 });
 
-/**
+/*
  * Start assessment callback
  */
 assessmentHandler.callbackQuery('start_assessment', async (ctx) => {
@@ -93,7 +93,7 @@ assessmentHandler.callbackQuery('start_assessment', async (ctx) => {
   }
 });
 
-/**
+/*
  * Shuffle array and return shuffled array with mapping
  * Uses Fisher-Yates algorithm with explicit tracking
  */
@@ -127,7 +127,7 @@ function shuffleOptions(options: string[], correctIndex: number): { shuffled: st
   return { shuffled, newCorrectIndex };
 }
 
-/**
+/*
  * Show a specific assessment question
  */
 async function showAssessmentQuestion(ctx: BotContext, userId: number, questionIndex: number) {
@@ -196,7 +196,7 @@ async function showAssessmentQuestion(ctx: BotContext, userId: number, questionI
 
   // Build question text
   let questionText = `
-**Вопрос ${questionIndex + 1} из ${state.questions.length}**
+*Вопрос ${questionIndex + 1} из ${state.questions.length}*
 
 ${question.russian}
 `;
@@ -222,7 +222,7 @@ ${question.russian}
   }
 }
 
-/**
+/*
  * Handle answer callback
  */
 assessmentHandler.callbackQuery(/^answer_(\d+)_(\d+)$/, async (ctx) => {
@@ -301,7 +301,7 @@ assessmentHandler.callbackQuery(/^answer_(\d+)_(\d+)$/, async (ctx) => {
   }
 });
 
-/**
+/*
  * Analyze results and show to user
  */
 async function analyzeAndShowResults(ctx: BotContext, userId: number, state: any) {
@@ -337,7 +337,7 @@ async function analyzeAndShowResults(ctx: BotContext, userId: number, state: any
       const correctAnswer = q.options[q.correctIndex];
       const isCorrect = state.answers[i] === q.correctIndex;
 
-      return `${i + 1}. **${q.hebrew}** (${q.level})
+      return `${i + 1}. *${q.hebrew}* (${q.level})
 ${isCorrect ? '✅' : '❌'} Ваш ответ: ${userAnswer}
 ${isCorrect ? '' : `✓ Правильно: ${correctAnswer}\n`}`;
     }).join('\n');
@@ -350,23 +350,23 @@ ${isCorrect ? '' : `✓ Правильно: ${correctAnswer}\n`}`;
 
     // Show results
     const resultText = `
-🎉 **Тест завершён!**
+🎉 *Тест завершён!*
 
-**Результат: ${correctCount}/${totalCount} правильных ответов**
+*Результат: ${correctCount}/${totalCount} правильных ответов*
 
-**Ваш уровень: ${analysis.level}**
+*Ваш уровень: ${analysis.level}*
 
-**Обоснование:**
+*Обоснование:*
 ${analysis.reasoning}
 
-**Ваши сильные стороны:**
+*Ваши сильные стороны:*
 ${analysis.strengths.map(s => `• ${s}`).join('\n')}
 
-**Рекомендации:**
+*Рекомендации:*
 ${analysis.recommendations.map(r => `• ${r}`).join('\n')}
 
 ━━━━━━━━━━━━━━━━
-**📋 Детальные результаты:**
+*📋 Детальные результаты:*
 
 ${answersBreakdown}
 ━━━━━━━━━━━━━━━━

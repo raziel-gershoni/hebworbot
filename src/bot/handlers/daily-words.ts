@@ -1,4 +1,4 @@
-/**
+/*
  * Daily Words Handler
  *
  * Deliver new Hebrew words to users based on their level
@@ -13,12 +13,12 @@ import { LEARNING_CONFIG } from '../../utils/config.js';
 
 export const dailyWordsHandler = new Composer<BotContext>();
 
-/**
+/*
  * CEFR level progression order
  */
 const LEVEL_ORDER = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'] as const;
 
-/**
+/*
  * Get next CEFR level
  */
 export function getNextLevel(currentLevel: string): string | null {
@@ -29,7 +29,7 @@ export function getNextLevel(currentLevel: string): string | null {
   return LEVEL_ORDER[currentIndex + 1];
 }
 
-/**
+/*
  * Calculate user's mastery percentage at current level
  */
 export async function calculateLevelMastery(userId: number, level: string): Promise<number> {
@@ -56,7 +56,7 @@ export async function calculateLevelMastery(userId: number, level: string): Prom
   return total > 0 ? Math.round((mastered / total) * 100) : 0;
 }
 
-/**
+/*
  * Get word distribution based on mastery percentage
  */
 export function getWordDistribution(masteryPercentage: number): {
@@ -76,7 +76,7 @@ export function getWordDistribution(masteryPercentage: number): {
   }
 }
 
-/**
+/*
  * Fetch words at a specific level that user hasn't learned yet
  */
 async function fetchWordsAtLevel(
@@ -102,7 +102,7 @@ async function fetchWordsAtLevel(
   return words;
 }
 
-/**
+/*
  * Get progressive words (mixed levels based on mastery)
  */
 async function getProgressiveWords(
@@ -136,7 +136,7 @@ async function getProgressiveWords(
   return [...currentLevelWords, ...nextLevelWords];
 }
 
-/**
+/*
  * Check if user should be auto-advanced to next level
  */
 async function checkAndAdvanceLevel(
@@ -165,7 +165,7 @@ async function checkAndAdvanceLevel(
   return { advanced: false, mastery };
 }
 
-/**
+/*
  * Get new words for user at their level (uses progressive selection)
  */
 async function getNewWordsForUser(userId: number, level: string, count: number = 5) {
@@ -173,7 +173,7 @@ async function getNewWordsForUser(userId: number, level: string, count: number =
   return getProgressiveWords(userId, level, count);
 }
 
-/**
+/*
  * Mark words as being learned by user
  */
 async function markWordsAsLearning(userId: number, vocabularyIds: number[]) {
@@ -186,7 +186,7 @@ async function markWordsAsLearning(userId: number, vocabularyIds: number[]) {
   }
 }
 
-/**
+/*
  * Daily words callback - main entry point
  */
 dailyWordsHandler.callbackQuery('daily_words', async (ctx) => {
@@ -214,11 +214,11 @@ dailyWordsHandler.callbackQuery('daily_words', async (ctx) => {
     if (advancementResult.advanced) {
       // User has been auto-advanced!
       const message = `
-🎉 **Поздравляем!**
+🎉 *Поздравляем!*
 
-Вы освоили **${advancementResult.mastery}%** уровня **${user.current_level}**!
+Вы освоили *${advancementResult.mastery}%* уровня *${user.current_level}*!
 
-🚀 **Вы автоматически переведены на уровень ${advancementResult.newLevel}!**
+🚀 *Вы автоматически переведены на уровень ${advancementResult.newLevel}!*
 
 Продолжайте в том же духе! Теперь вы будете изучать слова уровня ${advancementResult.newLevel}.
 `;
@@ -268,10 +268,10 @@ dailyWordsHandler.callbackQuery('daily_words', async (ctx) => {
       const currentLevelIndex = levelOrder.indexOf(user.current_level);
       const hasNextLevel = currentLevelIndex < levelOrder.length - 1;
 
-      let message = `🎉 Отлично! Вы уже изучили все доступные слова уровня **${user.current_level}**!\n\n`;
+      let message = `🎉 Отлично! Вы уже изучили все доступные слова уровня *${user.current_level}*!\n\n`;
 
       if (masteredPercentage >= 70 && hasNextLevel) {
-        message += `💪 Вы освоили **${masteredPercentage}%** слов этого уровня!\n\n`;
+        message += `💪 Вы освоили *${masteredPercentage}%* слов этого уровня!\n\n`;
         message += `Готовы перейти на следующий уровень? Пройдите тест заново, чтобы узнать свой новый уровень!`;
 
         await ctx.editMessageText(message, {
@@ -301,7 +301,7 @@ dailyWordsHandler.callbackQuery('daily_words', async (ctx) => {
     // Display words
     const wordsText = newWords.map((word, index) => {
       const levelBadge = word.cefr_level !== user.current_level ? ` [${word.cefr_level}]` : '';
-      return `**${index + 1}.**\n**${word.hebrew_word}**${levelBadge}\n💭 ${word.russian_translation}\n📖 ${word.example_sentence_hebrew}\n   _${word.example_sentence_russian}_`;
+      return `*${index + 1}.*\n*${word.hebrew_word}*${levelBadge}\n💭 ${word.russian_translation}\n📖 ${word.example_sentence_hebrew}\n   _${word.example_sentence_russian}_`;
     }).join('\n\n');
 
     // Build mastery progress info
@@ -311,14 +311,14 @@ dailyWordsHandler.callbackQuery('daily_words', async (ctx) => {
 
     let progressInfo = `📊 Прогресс уровня ${user.current_level}: ${currentMastery}%\n[${masteryBar}]\n`;
     if (showNextLevelPreview) {
-      progressInfo += `\n🔓 **Открыт предпросмотр уровня ${nextLevel}!**\n`;
+      progressInfo += `\n🔓 *Открыт предпросмотр уровня ${nextLevel}!*\n`;
     }
     if (currentMastery >= LEARNING_CONFIG.ADVANCED_THRESHOLD) {
-      progressInfo += `\n🎯 **Скоро повышение!** Ещё немного и вы перейдёте на ${nextLevel}!\n`;
+      progressInfo += `\n🎯 *Скоро повышение!* Ещё немного и вы перейдёте на ${nextLevel}!\n`;
     }
 
     const messageText = `
-📚 **Новые слова для изучения** (Уровень: ${user.current_level})
+📚 *Новые слова для изучения* (Уровень: ${user.current_level})
 
 ${progressInfo}
 ${wordsText}

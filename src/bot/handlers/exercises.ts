@@ -1,4 +1,4 @@
-/**
+/*
  * Exercises Handler
  *
  * Interactive exercises for vocabulary practice
@@ -18,7 +18,7 @@ export const exercisesHandler = new Composer<BotContext>();
 
 const EXERCISE_SET_SIZE = 5; // Number of questions per exercise session
 
-/**
+/*
  * Fetch exercise words at a specific level
  */
 async function fetchExerciseWordsAtLevel(
@@ -42,7 +42,7 @@ async function fetchExerciseWordsAtLevel(
   return words;
 }
 
-/**
+/*
  * Get words for exercises (words user is currently learning, with progressive selection)
  */
 async function getWordsForExercise(userId: number, level: string, count: number = EXERCISE_SET_SIZE) {
@@ -72,7 +72,7 @@ async function getWordsForExercise(userId: number, level: string, count: number 
   return [...currentLevelWords, ...nextLevelWords];
 }
 
-/**
+/*
  * Get distractor options (wrong answers) for multiple choice
  */
 async function getDistractors(correctWord: any, language: 'hebrew' | 'russian', count: number = 3) {
@@ -101,7 +101,7 @@ async function getDistractors(correctWord: any, language: 'hebrew' | 'russian', 
   return distractors.map(d => d.option);
 }
 
-/**
+/*
  * Shuffle array
  */
 function shuffle<T>(array: T[]): T[] {
@@ -113,7 +113,7 @@ function shuffle<T>(array: T[]): T[] {
   return result;
 }
 
-/**
+/*
  * Record exercise result
  */
 async function recordExerciseResult(
@@ -177,7 +177,7 @@ async function recordExerciseResult(
   }
 }
 
-/**
+/*
  * Exercise type selection
  */
 exercisesHandler.callbackQuery(['start_exercises', 'exercises'], async (ctx) => {
@@ -195,7 +195,7 @@ exercisesHandler.callbackQuery(['start_exercises', 'exercises'], async (ctx) => 
     .text('📚 Главное меню', 'main_menu');
 
   await ctx.editMessageText(
-    `✏️ **Упражнения**\n\nВыберите тип упражнения:\n\n🔤 **Иврит → Русский** - угадайте перевод с иврита на русский\n🔤 **Русский → Иврит** - угадайте перевод с русского на иврит\n🎴 **Флэшкарты** - быстрое повторение с самопроверкой`,
+    `✏️ *Упражнения*\n\nВыберите тип упражнения:\n\n🔤 *Иврит → Русский* - угадайте перевод с иврита на русский\n🔤 *Русский → Иврит* - угадайте перевод с русского на иврит\n🎴 *Флэшкарты* - быстрое повторение с самопроверкой`,
     {
       reply_markup: keyboard,
       parse_mode: 'Markdown',
@@ -203,7 +203,7 @@ exercisesHandler.callbackQuery(['start_exercises', 'exercises'], async (ctx) => 
   );
 });
 
-/**
+/*
  * Start Hebrew → Russian exercise
  */
 exercisesHandler.callbackQuery('exercise_he_ru', async (ctx) => {
@@ -266,7 +266,7 @@ exercisesHandler.callbackQuery('exercise_he_ru', async (ctx) => {
   }
 });
 
-/**
+/*
  * Show Hebrew → Russian question
  */
 async function showHebrewToRussianQuestion(ctx: BotContext, userId: number, questionIndex: number) {
@@ -328,7 +328,7 @@ async function showHebrewToRussianQuestion(ctx: BotContext, userId: number, ques
   }
 
   // Build question text
-  let questionText = `🔤 **Иврит → Русский** (${questionIndex + 1}/${state.words.length})\n\nЧто означает:\n\n**${word.hebrew_word}**\n`;
+  let questionText = `🔤 *Иврит → Русский* (${questionIndex + 1}/${state.words.length})\n\nЧто означает:\n\n*${word.hebrew_word}*\n`;
 
   // Add numbered options only if using numbered buttons
   if (hasLongOptions) {
@@ -342,7 +342,7 @@ async function showHebrewToRussianQuestion(ctx: BotContext, userId: number, ques
   });
 }
 
-/**
+/*
  * Handle Hebrew → Russian answer
  */
 exercisesHandler.callbackQuery(/^heру_answer_(\d+)_(\d+)$/, async (ctx) => {
@@ -400,7 +400,7 @@ exercisesHandler.callbackQuery(/^heру_answer_(\d+)_(\d+)$/, async (ctx) => {
   }
 });
 
-/**
+/*
  * Start Russian → Hebrew exercise
  */
 exercisesHandler.callbackQuery('exercise_ru_he', async (ctx) => {
@@ -463,7 +463,7 @@ exercisesHandler.callbackQuery('exercise_ru_he', async (ctx) => {
   }
 });
 
-/**
+/*
  * Show Russian → Hebrew question
  */
 async function showRussianToHebrewQuestion(ctx: BotContext, userId: number, questionIndex: number) {
@@ -525,7 +525,7 @@ async function showRussianToHebrewQuestion(ctx: BotContext, userId: number, ques
   }
 
   // Build question text
-  let questionText = `🔤 **Русский → Иврит** (${questionIndex + 1}/${state.words.length})\n\nКак будет на иврите:\n\n**${word.russian_translation}**\n`;
+  let questionText = `🔤 *Русский → Иврит* (${questionIndex + 1}/${state.words.length})\n\nКак будет на иврите:\n\n*${word.russian_translation}*\n`;
 
   // Add numbered options only if using numbered buttons
   if (hasLongOptions) {
@@ -539,7 +539,7 @@ async function showRussianToHebrewQuestion(ctx: BotContext, userId: number, ques
   });
 }
 
-/**
+/*
  * Handle Russian → Hebrew answer
  */
 exercisesHandler.callbackQuery(/^ruhe_answer_(\d+)_(\d+)$/, async (ctx) => {
@@ -597,7 +597,7 @@ exercisesHandler.callbackQuery(/^ruhe_answer_(\d+)_(\d+)$/, async (ctx) => {
   }
 });
 
-/**
+/*
  * Start Flashcard exercise
  */
 exercisesHandler.callbackQuery('exercise_flashcards', async (ctx) => {
@@ -660,7 +660,7 @@ exercisesHandler.callbackQuery('exercise_flashcards', async (ctx) => {
   }
 });
 
-/**
+/*
  * Show flashcard
  */
 async function showFlashcard(ctx: BotContext, userId: number, cardIndex: number) {
@@ -695,7 +695,7 @@ async function showFlashcard(ctx: BotContext, userId: number, cardIndex: number)
     .text('🔍 Показать ответ', `flashcard_reveal_${cardIndex}`);
 
   await ctx.editMessageText(
-    `🎴 **Флэшкарта** (${cardIndex + 1}/${state.words.length})\n\nВспомните перевод:\n\n**${word.hebrew_word}**\n\n📖 ${word.example_sentence_hebrew}\n\n_Постарайтесь вспомнить перевод, затем нажмите кнопку для проверки_\n`,
+    `🎴 *Флэшкарта* (${cardIndex + 1}/${state.words.length})\n\nВспомните перевод:\n\n*${word.hebrew_word}*\n\n📖 ${word.example_sentence_hebrew}\n\n_Постарайтесь вспомнить перевод, затем нажмите кнопку для проверки_\n`,
     {
       reply_markup: keyboard,
       parse_mode: 'Markdown',
@@ -703,7 +703,7 @@ async function showFlashcard(ctx: BotContext, userId: number, cardIndex: number)
   );
 }
 
-/**
+/*
  * Reveal flashcard answer
  */
 exercisesHandler.callbackQuery(/^flashcard_reveal_(\d+)$/, async (ctx) => {
@@ -734,7 +734,7 @@ exercisesHandler.callbackQuery(/^flashcard_reveal_(\d+)$/, async (ctx) => {
       .row();
 
     await ctx.editMessageText(
-      `🎴 **Флэшкарта** (${cardIndex + 1}/${state.words.length})\n\n**${word.hebrew_word}**\n\n💭 **${word.russian_translation}**\n\n📖 ${word.example_sentence_hebrew}\n   _${word.example_sentence_russian}_\n\n**Вы знали перевод?**\n`,
+      `🎴 *Флэшкарта* (${cardIndex + 1}/${state.words.length})\n\n*${word.hebrew_word}*\n\n💭 *${word.russian_translation}*\n\n📖 ${word.example_sentence_hebrew}\n   _${word.example_sentence_russian}_\n\n*Вы знали перевод?*\n`,
       {
         reply_markup: keyboard,
         parse_mode: 'Markdown',
@@ -746,7 +746,7 @@ exercisesHandler.callbackQuery(/^flashcard_reveal_(\d+)$/, async (ctx) => {
   }
 });
 
-/**
+/*
  * Handle flashcard self-assessment
  */
 exercisesHandler.callbackQuery(/^flashcard_(knew|didnt_know)_(\d+)$/, async (ctx) => {
@@ -796,7 +796,7 @@ exercisesHandler.callbackQuery(/^flashcard_(knew|didnt_know)_(\d+)$/, async (ctx
   }
 });
 
-/**
+/*
  * Show exercise results
  */
 async function showExerciseResults(ctx: BotContext, userId: number, state: any, exerciseType: string) {
@@ -827,7 +827,7 @@ async function showExerciseResults(ctx: BotContext, userId: number, state: any, 
     .text('📚 Меню', 'main_menu');
 
   await ctx.editMessageText(
-    `${emoji} **Упражнение завершено!**\n\n${message}\n\n📊 **Результаты:**\n• Правильных ответов: ${correctCount}/${words.length} (${percentage}%)\n• Время: ${totalTime}с\n\nПродолжайте учиться!`,
+    `${emoji} *Упражнение завершено!*\n\n${message}\n\n📊 *Результаты:*\n• Правильных ответов: ${correctCount}/${words.length} (${percentage}%)\n• Время: ${totalTime}с\n\nПродолжайте учиться!`,
     {
       reply_markup: keyboard,
       parse_mode: 'Markdown',
