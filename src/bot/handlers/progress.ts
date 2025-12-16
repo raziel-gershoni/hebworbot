@@ -9,6 +9,8 @@ import type { BotContext } from '../../types/bot.js';
 import { getUserById } from '../../services/database/models/user.js';
 import { sql } from '../../services/database/client.js';
 import { logger } from '../../utils/logger.js';
+import { calculateLevelMastery, getNextLevel } from './daily-words.js';
+import { LEARNING_CONFIG } from '../../utils/config.js';
 
 export const progressHandler = new Composer<BotContext>();
 
@@ -101,11 +103,29 @@ progressHandler.callbackQuery('progress', async (ctx) => {
     const activeDays = recentActivity.length;
     const recentExercises = recentActivity.reduce((sum, row) => sum + parseInt(row.count as string), 0);
 
+    // Calculate current level mastery
+    const masteryPercentage = await calculateLevelMastery(userId, user.current_level);
+    const masteryBar = '█'.repeat(Math.floor(masteryPercentage / 10)) + '░'.repeat(10 - Math.floor(masteryPercentage / 10));
+    const nextLevel = getNextLevel(user.current_level);
+
+    // Build mastery info
+    let masteryInfo = `**Освоение уровня ${user.current_level}:** ${masteryPercentage}%\n[${masteryBar}]\n`;
+    if (masteryPercentage >= LEARNING_CONFIG.PREVIEW_THRESHOLD && nextLevel) {
+      masteryInfo += `\n🔓 **Открыт предпросмотр уровня ${nextLevel}!**\n`;
+    }
+    if (masteryPercentage >= LEARNING_CONFIG.ADVANCED_THRESHOLD && nextLevel) {
+      masteryInfo += `🎯 **Скоро повышение до ${nextLevel}!**\n`;
+    }
+    if (masteryPercentage >= LEARNING_CONFIG.AUTO_ADVANCE_THRESHOLD && nextLevel) {
+      masteryInfo += `✨ **Готовы к ${nextLevel}!** Автоматическое повышение при следующем изучении слов.\n`;
+    }
+
     // Build progress message
     const progressText = `
 📊 **Ваш прогресс**
 
-**Уровень:** ${user.current_level}
+**Текущий уровень:** ${user.current_level}
+${masteryInfo}
 
 ━━━━━━━━━━━━━━━━
 **📚 Словарный запас** (${totalWords} слов)

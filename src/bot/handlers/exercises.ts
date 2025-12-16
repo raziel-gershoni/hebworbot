@@ -12,15 +12,22 @@ import type { BotContext } from '../../types/bot.js';
 import { getUserById } from '../../services/database/models/user.js';
 import { sql } from '../../services/database/client.js';
 import { logger } from '../../utils/logger.js';
+import { calculateLevelMastery, getWordDistribution, getNextLevel } from './daily-words.js';
 
 export const exercisesHandler = new Composer<BotContext>();
 
 const EXERCISE_SET_SIZE = 5; // Number of questions per exercise session
 
 /**
- * Get words for exercises (words user is currently learning)
+ * Fetch exercise words at a specific level
  */
-async function getWordsForExercise(userId: number, level: string, count: number = EXERCISE_SET_SIZE) {
+async function fetchExerciseWordsAtLevel(
+  userId: number,
+  level: string,
+  count: number
+): Promise<any[]> {
+  if (count <= 0) return [];
+
   const words = await sql`
     SELECT v.*, uv.status, uv.review_count
     FROM vocabulary v
@@ -33,6 +40,36 @@ async function getWordsForExercise(userId: number, level: string, count: number 
   `;
 
   return words;
+}
+
+/**
+ * Get words for exercises (words user is currently learning, with progressive selection)
+ */
+async function getWordsForExercise(userId: number, level: string, count: number = EXERCISE_SET_SIZE) {
+  // 1. Calculate current level mastery
+  const mastery = await calculateLevelMastery(userId, level);
+
+  // 2. Determine word distribution based on mastery
+  const distribution = getWordDistribution(mastery);
+
+  // 3. Calculate counts for each level
+  const currentLevelCount = Math.round(count * distribution.currentLevel);
+  const nextLevelCount = count - currentLevelCount;
+
+  // 4. Fetch words from both levels
+  const currentLevelWords = await fetchExerciseWordsAtLevel(
+    userId,
+    level,
+    currentLevelCount
+  );
+
+  const nextLevel = getNextLevel(level);
+  const nextLevelWords = nextLevel && nextLevelCount > 0
+    ? await fetchExerciseWordsAtLevel(userId, nextLevel, nextLevelCount)
+    : [];
+
+  // 5. Merge and return
+  return [...currentLevelWords, ...nextLevelWords];
 }
 
 /**

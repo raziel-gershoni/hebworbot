@@ -87,3 +87,11 @@ FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER update_conversation_state_updated_at BEFORE UPDATE ON conversation_state
 FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- Add mastery tracking column for progressive learning (v2 migration)
+ALTER TABLE users
+ADD COLUMN IF NOT EXISTS current_level_mastery_percentage INT DEFAULT 0;
+
+-- Create index for performance (querying by level and mastery)
+CREATE INDEX IF NOT EXISTS idx_users_level_mastery
+ON users(current_level, current_level_mastery_percentage);
