@@ -10,8 +10,8 @@ export const config = {
   },
   gemini: {
     apiKey: process.env.GEMINI_API_KEY || '',
-    model: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
-    modelPremium: process.env.GEMINI_MODEL_PREMIUM || 'gemini-3.0',
+    model: process.env.GEMINI_MODEL || 'gemini-3-flash-preview',
+    modelPremium: process.env.GEMINI_MODEL_PREMIUM || 'gemini-3-pro-preview',
   },
   database: {
     url: process.env.DATABASE_URL || '',
